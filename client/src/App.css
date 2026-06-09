@@ -1,0 +1,229 @@
+/* Reset & Base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  color: #2d3748;
+  line-height: 1.6;
+}
+
+/* Container */
+.container {
+  max-width: 480px;
+  margin: 40px auto;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+/* Navbar */
+.navbar {
+  background: #2d3748;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+}
+
+.navbar a {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.navbar a:hover,
+.navbar a.active {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Main content padding */
+.container > div {
+  padding: 24px;
+}
+
+/* Headings */
+h2, h3, h4 {
+  color: #1a202c;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+h3 {
+  font-size: 1.25rem;
+}
+
+/* Form elements */
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: #f7fafc;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+  background: white;
+}
+
+/* Radio group */
+.radio-group {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin: 20px 0;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.radio-group input[type="radio"] {
+  width: auto;
+  margin: 0;
+  accent-color: #4299e1;
+}
+
+/* Category select group */
+.category-group {
+  margin: 12px 0 24px;
+}
+
+/* Buttons */
+button {
+  width: 100%;
+  padding: 14px;
+  background: #3182ce;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  margin: 12px 0;
+}
+
+button:hover {
+  background: #2b6cb0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(49, 130, 206, 0.25);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Delete button */
+.delete-btn {
+  width: auto;
+  padding: 8px 16px;
+  background: #e53e3e;
+  font-size: 0.9rem;
+  margin: 10px 0 0 auto;
+  display: block;
+}
+
+.delete-btn:hover {
+  background: #c53030;
+}
+
+/* Transaction list */
+ul {
+  list-style: none;
+  margin-top: 24px;
+}
+
+li {
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  background: #f7fafc;
+  border: 1px solid #edf2f7;
+  transition: all 0.2s ease;
+}
+
+li:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.income {
+  border-left: 5px solid #38a169;
+  background: #f0fff4;
+}
+
+.expense {
+  border-left: 5px solid #e53e3e;
+  background: #fff5f5;
+}
+
+li strong {
+  font-size: 1.15rem;
+  display: block;
+  margin-bottom: 6px;
+}
+
+small {
+  color: #718096;
+  font-size: 0.85rem;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Balance display */
+h3 span {
+  font-weight: 700;
+  font-size: 1.4rem;
+}
+.recharts-wrapper {
+  margin: 0 auto !important;
+}
+
+.recharts-pie-label-text {
+  font-size: 12px !important;   /* smaller labels = less clipping */
+}
+
+/* Prevent overflow clipping */
+.recharts-responsive-container {
+  overflow: visible !important;
+}
+
+/* Make positive/negative more obvious */
+h3 span.positive { color: #38a169; }
+h3 span.negative { color: #e53e3e; }
