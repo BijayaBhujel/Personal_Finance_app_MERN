@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Link, Navigate } from "react-ro
 import API from "./api/axiosConfig";
 import ChartPage from "./ChartPage";
 import TransactionsPage from "./TransactionsPage";
+import Login from "./Login";
+import ProtectedRoute from "./ProtectedRoute";
 import "./App.css";
 
 function App() {
@@ -76,149 +78,187 @@ function App() {
     }
   };
 
-  // RESTART / CLEAR ALL
+  // RESTART MONTH — saves snapshot first, then clears
   const restartTransactions = async () => {
     const confirmRestart = window.confirm(
-      "Are you sure you want to clear all transactions? This cannot be undone."
+      "Are you sure you want to clear all transactions? Current month will be saved automatically."
     );
     if (confirmRestart) {
       try {
+        // Calculate totals
+        let totalIncome = 0;
+        let totalExpense = 0;
+        transactions.forEach((t) => {
+          if (t.type === "income") totalIncome += Number(t.amount);
+          else totalExpense += Number(t.amount);
+        });
+
+        // Get current month name e.g. "June 2026"
+        const monthName = new Date().toLocaleString("default", {
+          month: "long",
+          year: "numeric",
+        });
+
+        // Save snapshot
+        await API.post("/save-month", {
+          monthName,
+          transactions,
+          totalIncome,
+          totalExpense,
+          balance,
+        });
+
+        // Then clear current transactions
         await API.delete("/restart-transactions");
         fetchTransactions();
-        alert("Data cleared! Ready for a new month.");
+        alert(`${monthName} saved! Ready for a new month.`);
       } catch (error) {
         console.error("Error restarting transactions", error);
       }
     }
   };
 
+  // LOGOUT
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    window.location.href = "/login";
+  };
+
+  const Navbar = () => (
+    <nav className="navbar">
+      <Link to="/transactions">Transactions</Link>
+      <Link to="/chart">Chart</Link>
+      <button onClick={restartTransactions}>Restart Month</button>
+      <button onClick={handleLogout}>Logout</button>
+    </nav>
+  );
+
   return (
     <Router>
       <div className="container">
-
-        {/* NAVBAR */}
-        <nav className="navbar">
-          <Link to="/transactions">Transactions</Link>
-          <Link to="/chart">Chart</Link>
-          <button onClick={restartTransactions}>
-            Restart Month
-          </button>
-          <button onClick={() => {
-            localStorage.clear();
-            window.location.href = "/login";
-          }}>
-            Logout
-          </button>
-        </nav>
-
         <Routes>
-          {/* Default page */}
-          <Route path="/" element={<Navigate to="/transactions" />} />
 
-          {/* Transactions Page */}
+          {/* Login Page */}
+          <Route path="/login" element={<Login />} />
+
+          {/* Default redirect */}
+          <Route path="/" element={<Navigate to="/login" />} />
+
+          {/* Transactions Page - Protected */}
           <Route
             path="/transactions"
             element={
-              <TransactionsPage>
-                <h2>Personal Finance Manager</h2>
+              <ProtectedRoute>
+                <>
+                  <Navbar />
+                  <TransactionsPage>
+                    <h2>Personal Finance Manager</h2>
 
-                <label>Amount:</label>
-                <input
-                  type="number"
-                  placeholder="Enter Amount"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
-
-                <label>Description:</label>
-                <input
-                  type="text"
-                  placeholder="Enter Description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-
-                <div className="radio-group">
-                  <label>
+                    <label>Amount:</label>
                     <input
-                      type="radio"
-                      value="income"
-                      checked={type === "income"}
-                      onChange={(e) => setType(e.target.value)}
+                      type="number"
+                      placeholder="Enter Amount"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
                     />
-                    Income
-                  </label>
-                  <label>
+
+                    <label>Description:</label>
                     <input
-                      type="radio"
-                      value="expense"
-                      checked={type === "expense"}
-                      onChange={(e) => setType(e.target.value)}
+                      type="text"
+                      placeholder="Enter Description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
                     />
-                    Expense
-                  </label>
-                </div>
 
-                {type === "expense" && (
-                  <div className="category-group">
-                    <label>Category:</label>
-                    <select
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                    >
-                      <option>Food</option>
-                      <option>Rent</option>
-                      <option>Travel</option>
-                      <option>Entertainment</option>
-                      <option>Shopping</option>
-                      <option>Other</option>
-                    </select>
-                  </div>
-                )}
+                    <div className="radio-group">
+                      <label>
+                        <input
+                          type="radio"
+                          value="income"
+                          checked={type === "income"}
+                          onChange={(e) => setType(e.target.value)}
+                        />
+                        Income
+                      </label>
+                      <label>
+                        <input
+                          type="radio"
+                          value="expense"
+                          checked={type === "expense"}
+                          onChange={(e) => setType(e.target.value)}
+                        />
+                        Expense
+                      </label>
+                    </div>
 
-                <button onClick={addTransaction}>Add</button>
+                    {type === "expense" && (
+                      <div className="category-group">
+                        <label>Category:</label>
+                        <select
+                          value={category}
+                          onChange={(e) => setCategory(e.target.value)}
+                        >
+                          <option>Food</option>
+                          <option>Rent</option>
+                          <option>Travel</option>
+                          <option>Entertainment</option>
+                          <option>Shopping</option>
+                          <option>Other</option>
+                        </select>
+                      </div>
+                    )}
 
-                <h3>
-                  Current Balance:
-                  <span style={{ color: balance >= 0 ? "black" : "red" }}>
-                    {" "}{balance}
-                  </span>
-                </h3>
+                    <button onClick={addTransaction}>Add</button>
 
-                <h4>Transactions:</h4>
+                    <h3>
+                      Current Balance:
+                      <span style={{ color: balance >= 0 ? "black" : "red" }}>
+                        {" "}{balance}
+                      </span>
+                    </h3>
 
-                {transactions.length === 0 ? (
-                  <p>No Transactions Yet</p>
-                ) : (
-                  <ul>
-                    {transactions.map((t) => (
-                      <li key={t._id}>
-                        <strong>
-                          {t.type === "income" ? "INCOME" : "EXPENSE"} :
-                          {t.type === "income" ? "+" : "-"}
-                          {t.amount}
-                        </strong>
-                        <div>{t.description}</div>
-                        <small>{new Date(t.date).toLocaleString()}</small>
-                        <button onClick={() => deleteTransaction(t._id)}>
-                          Delete
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </TransactionsPage>
+                    <h4>Transactions:</h4>
+
+                    {transactions.length === 0 ? (
+                      <p>No Transactions Yet</p>
+                    ) : (
+                      <ul>
+                        {transactions.map((t) => (
+                          <li key={t._id}>
+                            <strong>
+                              {t.type === "income" ? "INCOME" : "EXPENSE"} :
+                              {t.type === "income" ? "+" : "-"}
+                              {t.amount}
+                            </strong>
+                            <div>{t.description}</div>
+                            <small>{new Date(t.date).toLocaleString()}</small>
+                            <button onClick={() => deleteTransaction(t._id)}>
+                              Delete
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </TransactionsPage>
+                </>
+              </ProtectedRoute>
             }
           />
 
-          {/* Chart Page */}
+          {/* Chart Page - Protected */}
           <Route
             path="/chart"
-            element={<ChartPage transactions={transactions} />}
+            element={
+              <ProtectedRoute>
+                <>
+                  <Navbar />
+                  <ChartPage transactions={transactions} />
+                </>
+              </ProtectedRoute>
+            }
           />
 
         </Routes>
-
       </div>
     </Router>
   );
