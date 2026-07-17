@@ -36,7 +36,7 @@ const Finance = mongoose.model("Finance", financeSchema);
 const MonthlySnapshot = mongoose.model("MonthlySnapshot", monthlySnapshotSchema);
 
 // ─── EDIT THESE THREE VALUES BEFORE RUNNING ───────────────────
-const SISTER_USERNAME = "Myfinance";       // her existing username — unchanged
+const SISTER_USERNAME = "Bijeta";       // her existing username — unchanged
 const SISTER_PASSWORD = "finance123";      // her existing password, or set a new one
 const SISTER_EMAIL = "bijetab1@gmail.com"; // required for reset-password to work
 // ────────────────────────────────────────────────────────────

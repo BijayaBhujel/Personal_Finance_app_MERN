@@ -20,8 +20,8 @@ function Login() {
       const res = await API.post("/login", { username, password });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("username", res.data.username);
-      navigate("/transactions");
-    } catch (err) {
+      window.location.href = "/transactions";    
+      } catch (err) {
       setError(err.response?.data?.error || "Login failed");
     }
     setLoading(false);
