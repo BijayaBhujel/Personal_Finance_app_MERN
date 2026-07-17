@@ -4,11 +4,13 @@ import API from "./api/axiosConfig";
 import ChartPage from "./ChartPage";
 import TransactionsPage from "./TransactionsPage";
 import Login from "./Login";
+import ForgotPassword from "./ForgotPassword";
+import ResetPassword from "./ResetPassword";
+import Register from "./Register";
 import ProtectedRoute from "./ProtectedRoute";
 import "./App.css";
 
 function App() {
-  // STATES
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState("income");
@@ -16,13 +18,14 @@ function App() {
   const [transactions, setTransactions] = useState([]);
   const [balance, setBalance] = useState(0);
 
-  // RUN ON PAGE LOAD
+  const username = localStorage.getItem("username");
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
+  if (localStorage.getItem("token")) {
     fetchTransactions();
+   }
   }, []);
-
-  // GET DATA FROM BACKEND
   const fetchTransactions = async () => {
     try {
       const res = await API.get("/transactions");
@@ -33,20 +36,15 @@ function App() {
     }
   };
 
-  // CALCULATE BALANCE
   const calculateBalance = (data) => {
     let total = 0;
     data.forEach((t) => {
-      if (t.type === "income") {
-        total += Number(t.amount);
-      } else {
-        total -= Number(t.amount);
-      }
+      if (t.type === "income") total += Number(t.amount);
+      else total -= Number(t.amount);
     });
     setBalance(total);
   };
 
-  // ADD TRANSACTION
   const addTransaction = async () => {
     if (!amount || amount <= 0) {
       alert("Please enter a valid amount");
@@ -55,8 +53,8 @@ function App() {
     try {
       await API.post("/add-transaction", {
         amount: Number(amount),
-        description: description,
-        type: type,
+        description,
+        type,
         category: type === "expense" ? category : "",
         date: new Date(),
       });
@@ -68,7 +66,6 @@ function App() {
     }
   };
 
-  // DELETE TRANSACTION
   const deleteTransaction = async (id) => {
     try {
       await API.delete(`/delete-transaction/${id}`);
@@ -78,51 +75,51 @@ function App() {
     }
   };
 
-  // RESTART MONTH — saves snapshot first, then clears
   const restartTransactions = async () => {
     const confirmRestart = window.confirm(
       "Are you sure you want to clear all transactions? Current month will be saved automatically."
     );
     if (confirmRestart) {
       try {
-        // Calculate totals
+        const res = await API.get("/transactions");
+        const currentTransactions = res.data;
+
         let totalIncome = 0;
         let totalExpense = 0;
-        transactions.forEach((t) => {
+        currentTransactions.forEach((t) => {
           if (t.type === "income") totalIncome += Number(t.amount);
           else totalExpense += Number(t.amount);
         });
+        const currentBalance = totalIncome - totalExpense;
 
-        // Get current month name e.g. "June 2026"
         const monthName = new Date().toLocaleString("default", {
           month: "long",
           year: "numeric",
         });
 
-        // Save snapshot
         await API.post("/save-month", {
           monthName,
-          transactions,
+          transactions: currentTransactions,
           totalIncome,
           totalExpense,
-          balance,
+          balance: currentBalance,
         });
 
-        // Then clear current transactions
         await API.delete("/restart-transactions");
         fetchTransactions();
         alert(`${monthName} saved! Ready for a new month.`);
       } catch (error) {
         console.error("Error restarting transactions", error);
+        alert("Error saving month. Please try again.");
       }
     }
   };
 
-  // LOGOUT
   const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    window.location.href = "/login";
-  };
+  localStorage.removeItem("token");
+  localStorage.removeItem("username");
+  window.location.href = "/login";
+};
 
   const Navbar = () => (
     <nav className="navbar">
@@ -137,14 +134,13 @@ function App() {
     <Router>
       <div className="container">
         <Routes>
-
-          {/* Login Page */}
+        
           <Route path="/login" element={<Login />} />
-
-          {/* Default redirect */}
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/" element={<Navigate to="/login" />} />
 
-          {/* Transactions Page - Protected */}
           <Route
             path="/transactions"
             element={
@@ -152,7 +148,7 @@ function App() {
                 <>
                   <Navbar />
                   <TransactionsPage>
-                    <h2>Personal Finance Manager</h2>
+                    <h2>Welcome, {username}!</h2>
 
                     <label>Amount:</label>
                     <input
@@ -213,7 +209,7 @@ function App() {
                     <h3>
                       Current Balance:
                       <span style={{ color: balance >= 0 ? "black" : "red" }}>
-                        {" "}{balance}
+                        {" "}Rs. {balance}
                       </span>
                     </h3>
 
@@ -228,7 +224,7 @@ function App() {
                             <strong>
                               {t.type === "income" ? "INCOME" : "EXPENSE"} :
                               {t.type === "income" ? "+" : "-"}
-                              {t.amount}
+                              Rs. {t.amount}
                             </strong>
                             <div>{t.description}</div>
                             <small>{new Date(t.date).toLocaleString()}</small>
@@ -245,7 +241,6 @@ function App() {
             }
           />
 
-          {/* Chart Page - Protected */}
           <Route
             path="/chart"
             element={
@@ -257,7 +252,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
         </Routes>
       </div>
     </Router>

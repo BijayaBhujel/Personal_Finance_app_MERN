@@ -83,7 +83,7 @@ function CategoryPieChart({ transactions }) {
       </h3>
 
       <p style={{ color: "#555", marginBottom: "20px", fontSize: "1.1rem" }}>
-        Total: ${totalExpense.toFixed(2)}
+        Total: Rs. {totalExpense.toFixed(2)}
       </p>
 
       {/* Chart container with fixed height – important for iOS/Safari */}
@@ -92,6 +92,7 @@ function CategoryPieChart({ transactions }) {
           width: "100%",
           height: "460px",           // increased height helps a lot on mobile
           minHeight: "400px",
+          overflow: "visible",       // prevents left-side labels from being clipped
         }}
       >
         <ResponsiveContainer width="100%" height="100%">
@@ -100,11 +101,29 @@ function CategoryPieChart({ transactions }) {
               data={chartData}
               cx="45%"                      // slightly left to give space for legend
               cy="50%"
-              outerRadius={110}             // good size for mobile & desktop
-              labelLine={true}
-              label={({ name, percent }) =>
-                `${name} ${(percent * 100).toFixed(0)}%`
-              }
+              outerRadius={100}
+              labelLine={false}
+              label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                // Calculate a point INSIDE the slice (60% out from center)
+                // instead of using recharts' default outside-label position
+                const RADIAN = Math.PI / 180;
+                const radius = innerRadius + (outerRadius - innerRadius) * 0.6;
+                const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                return (
+                  <text
+                    x={x}
+                    y={y}
+                    fill="white"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize="13"
+                    fontWeight="700"
+                  >
+                    {`${(percent * 100).toFixed(0)}%`}
+                  </text>
+                );
+              }}
               fill="#8884d8"
               dataKey="value"
             >
@@ -116,7 +135,7 @@ function CategoryPieChart({ transactions }) {
               ))}
             </Pie>
 
-            <Tooltip formatter={(value) => [`$${value.toFixed(2)}`, "Amount"]} />
+            <Tooltip formatter={(value) => [`Rs. ${value.toFixed(2)}`, "Amount"]} />
 
             {/* Vertical legend on the right – fixes mobile cutoff issues */}
             <Legend

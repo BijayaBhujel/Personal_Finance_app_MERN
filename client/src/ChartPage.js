@@ -8,7 +8,6 @@ function ChartPage({ transactions }) {
   const [selectedMonthData, setSelectedMonthData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Fetch list of saved months on load
   useEffect(() => {
     fetchSavedMonths();
   }, []);
@@ -22,16 +21,13 @@ function ChartPage({ transactions }) {
     }
   };
 
-  // Fetch full data when a month is selected
   const handleMonthChange = async (e) => {
     const id = e.target.value;
     setSelectedMonthId(id);
-
     if (!id) {
       setSelectedMonthData(null);
       return;
     }
-
     setLoading(true);
     try {
       const res = await API.get(`/saved-months/${id}`);
@@ -40,6 +36,15 @@ function ChartPage({ transactions }) {
       console.error("Error fetching month data", error);
     }
     setLoading(false);
+  };
+
+  // Normalize previous month transactions so CategoryPieChart works
+  // (converts transactionType back to type)
+  const normalizePrevTransactions = (txns) => {
+    return txns.map((t) => ({
+      ...t,
+      type: t.transactionType || t.type,
+    }));
   };
 
   return (
@@ -85,7 +90,6 @@ function ChartPage({ transactions }) {
         </div>
       )}
 
-      {/* Loading */}
       {loading && (
         <p style={{ textAlign: "center", color: "#718096" }}>Loading...</p>
       )}
@@ -93,64 +97,50 @@ function ChartPage({ transactions }) {
       {/* Previous Month View */}
       {selectedMonthData && !loading && (
         <div>
-          <h3 style={{ textAlign: "center", marginBottom: "8px", color: "#2d3748" }}>
+          <h3 style={{ textAlign: "center", marginBottom: "16px", color: "#2d3748" }}>
             {selectedMonthData.monthName}
           </h3>
 
           {/* Summary cards */}
-          <div style={{
-            display: "flex",
-            gap: "12px",
-            marginBottom: "20px",
-            flexWrap: "wrap",
-          }}>
+          <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap" }}>
             <div style={{
-              flex: 1,
-              background: "#f0fff4",
-              border: "1px solid #c6f6d5",
-              borderRadius: "10px",
-              padding: "12px",
-              textAlign: "center",
+              flex: 1, background: "#f0fff4", border: "1px solid #c6f6d5",
+              borderRadius: "10px", padding: "12px", textAlign: "center",
             }}>
               <div style={{ fontSize: "0.85rem", color: "#276749" }}>Total Income</div>
               <div style={{ fontSize: "1.2rem", fontWeight: "700", color: "#276749" }}>
-                +{selectedMonthData.totalIncome}
+                +Rs. {selectedMonthData.totalIncome}
               </div>
             </div>
             <div style={{
-              flex: 1,
-              background: "#fff5f5",
-              border: "1px solid #fed7d7",
-              borderRadius: "10px",
-              padding: "12px",
-              textAlign: "center",
+              flex: 1, background: "#fff5f5", border: "1px solid #fed7d7",
+              borderRadius: "10px", padding: "12px", textAlign: "center",
             }}>
               <div style={{ fontSize: "0.85rem", color: "#9b2c2c" }}>Total Expense</div>
               <div style={{ fontSize: "1.2rem", fontWeight: "700", color: "#9b2c2c" }}>
-                -{selectedMonthData.totalExpense}
+                -Rs. {selectedMonthData.totalExpense}
               </div>
             </div>
             <div style={{
               flex: 1,
               background: selectedMonthData.balance >= 0 ? "#ebf8ff" : "#fff5f5",
               border: `1px solid ${selectedMonthData.balance >= 0 ? "#bee3f8" : "#fed7d7"}`,
-              borderRadius: "10px",
-              padding: "12px",
-              textAlign: "center",
+              borderRadius: "10px", padding: "12px", textAlign: "center",
             }}>
               <div style={{ fontSize: "0.85rem", color: "#2c5282" }}>Balance</div>
               <div style={{
-                fontSize: "1.2rem",
-                fontWeight: "700",
+                fontSize: "1.2rem", fontWeight: "700",
                 color: selectedMonthData.balance >= 0 ? "#2b6cb0" : "#c53030"
               }}>
-                {selectedMonthData.balance}
+                Rs. {selectedMonthData.balance}
               </div>
             </div>
           </div>
 
-          {/* Pie chart for previous month */}
-          <CategoryPieChart transactions={selectedMonthData.transactions} />
+          {/* Pie chart — normalize transactionType → type */}
+          <CategoryPieChart
+            transactions={normalizePrevTransactions(selectedMonthData.transactions)}
+          />
 
           {/* Transaction list */}
           <h4 style={{ marginTop: "24px", marginBottom: "12px" }}>Transactions:</h4>
@@ -163,18 +153,18 @@ function ChartPage({ transactions }) {
                   padding: "12px 16px",
                   marginBottom: "10px",
                   borderRadius: "10px",
-                  background: t.type === "income" ? "#f0fff4" : "#fff5f5",
-                  borderLeft: `5px solid ${t.type === "income" ? "#38a169" : "#e53e3e"}`,
-                  border: `1px solid ${t.type === "income" ? "#c6f6d5" : "#fed7d7"}`,
+                  background: t.transactionType === "income" ? "#f0fff4" : "#fff5f5",
+                  borderLeft: `5px solid ${t.transactionType === "income" ? "#38a169" : "#e53e3e"}`,
+                  border: `1px solid ${t.transactionType === "income" ? "#c6f6d5" : "#fed7d7"}`,
                 }}>
                   <strong>
-                    {t.type === "income" ? "INCOME" : "EXPENSE"} :
-                    {t.type === "income" ? "+" : "-"}
-                    {t.amount}
+                    {t.transactionType === "income" ? "INCOME" : "EXPENSE"} :
+                    {t.transactionType === "income" ? "+" : "-"}
+                    Rs. {t.amount}
                   </strong>
                   <div>{t.description}</div>
                   <small style={{ color: "#718096" }}>
-                    {new Date(t.date).toLocaleString()}
+                    {t.date ? new Date(t.date).toLocaleString() : ""}
                   </small>
                 </li>
               ))}

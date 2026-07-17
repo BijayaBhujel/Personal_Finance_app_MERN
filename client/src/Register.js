@@ -2,27 +2,36 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import API from "./api/axiosConfig";
 
-function Login() {
+function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
-    if (!username || !password) {
-      setError("Please enter username and password");
+  const handleRegister = async () => {
+    if (!username || !password || !confirmPassword) {
+      setError("Please fill in all fields");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
       return;
     }
     setLoading(true);
     setError("");
     try {
-      const res = await API.post("/login", { username, password });
+      const res = await API.post("/register", { username, password });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("username", res.data.username);
       navigate("/transactions");
     } catch (err) {
-      setError(err.response?.data?.error || "Login failed");
+      setError(err.response?.data?.error || "Registration failed");
     }
     setLoading(false);
   };
@@ -44,10 +53,10 @@ function Login() {
         maxWidth: "400px",
       }}>
         <h2 style={{ textAlign: "center", marginBottom: "8px", color: "#1a202c", fontSize: "1.8rem", fontWeight: "600" }}>
-          Personal Finance
+          Create Account
         </h2>
         <p style={{ textAlign: "center", color: "#718096", marginBottom: "32px", fontSize: "0.95rem" }}>
-          Sign in to manage your finances
+          Start managing your finances
         </p>
 
         <label style={{ display: "block", fontWeight: "600", marginBottom: "6px", color: "#4a5568" }}>
@@ -55,10 +64,9 @@ function Login() {
         </label>
         <input
           type="text"
-          placeholder="Enter username"
+          placeholder="Choose a username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleLogin()}
           style={{
             width: "100%", padding: "12px 14px", marginBottom: "16px",
             border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "1rem",
@@ -71,10 +79,25 @@ function Login() {
         </label>
         <input
           type="password"
-          placeholder="Enter password"
+          placeholder="At least 6 characters"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+          style={{
+            width: "100%", padding: "12px 14px", marginBottom: "16px",
+            border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "1rem",
+            background: "#f7fafc", boxSizing: "border-box",
+          }}
+        />
+
+        <label style={{ display: "block", fontWeight: "600", marginBottom: "6px", color: "#4a5568" }}>
+          Confirm Password
+        </label>
+        <input
+          type="password"
+          placeholder="Repeat your password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleRegister()}
           style={{
             width: "100%", padding: "12px 14px", marginBottom: "8px",
             border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "1rem",
@@ -87,28 +110,23 @@ function Login() {
             {error}
           </p>
         )}
-        <div style={{ textAlign: "right", marginBottom: "16px" }}>
-            <Link to="/forgot-password" style={{ fontSize: "0.9rem", color: "#3182ce" }}>
-                 Forgot password?
-            </Link>
-        </div>
 
         <button
-          onClick={handleLogin}
+          onClick={handleRegister}
           disabled={loading}
           style={{
-            width: "100%", padding: "14px", background: loading ? "#90cdf4" : "#3182ce",
+            width: "100%", padding: "14px", background: loading ? "#9ae6b4" : "#38a169",
             color: "white", border: "none", borderRadius: "8px",
             fontSize: "1.05rem", fontWeight: "600", cursor: "pointer", marginTop: "8px",
           }}
         >
-          {loading ? "Signing in..." : "Login"}
+          {loading ? "Creating account..." : "Register"}
         </button>
 
         <p style={{ textAlign: "center", marginTop: "20px", color: "#718096", fontSize: "0.9rem" }}>
-          Don't have an account?{" "}
-          <Link to="/register" style={{ color: "#3182ce", fontWeight: "600", textDecoration: "none" }}>
-            Register
+          Already have an account?{" "}
+          <Link to="/login" style={{ color: "#3182ce", fontWeight: "600", textDecoration: "none" }}>
+            Login
           </Link>
         </p>
       </div>
@@ -116,4 +134,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Register;
