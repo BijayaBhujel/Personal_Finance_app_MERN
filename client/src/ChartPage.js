@@ -153,13 +153,13 @@ function ChartPage({ transactions }) {
                   padding: "12px 16px",
                   marginBottom: "10px",
                   borderRadius: "10px",
-                  background: t.transactionType === "income" ? "#f0fff4" : "#fff5f5",
-                  borderLeft: `5px solid ${t.transactionType === "income" ? "#38a169" : "#e53e3e"}`,
-                  border: `1px solid ${t.transactionType === "income" ? "#c6f6d5" : "#fed7d7"}`,
+                  background: t.type === "income" ? "#f0fff4" : "#fff5f5",
+                  borderLeft: `5px solid ${t.type === "income" ? "#38a169" : "#e53e3e"}`,
+                  border: `1px solid ${t.type === "income" ? "#c6f6d5" : "#fed7d7"}`,
                 }}>
                   <strong>
-                    {t.transactionType === "income" ? "INCOME" : "EXPENSE"} :
-                    {t.transactionType === "income" ? "+" : "-"}
+                    {t.type === "income" ? "INCOME" : "EXPENSE"} :
+                    {t.type === "income" ? "+" : "-"}
                     Rs. {t.amount}
                   </strong>
                   <div>{t.description}</div>

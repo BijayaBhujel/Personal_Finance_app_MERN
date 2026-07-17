@@ -4,6 +4,7 @@ import API from "./api/axiosConfig";
 
 function Register() {
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -11,8 +12,12 @@ function Register() {
   const navigate = useNavigate();
 
   const handleRegister = async () => {
-    if (!username || !password || !confirmPassword) {
+    if (!username || !email || !password || !confirmPassword) {
       setError("Please fill in all fields");
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError("Please enter a valid email address");
       return;
     }
     if (password.length < 6) {
@@ -26,10 +31,10 @@ function Register() {
     setLoading(true);
     setError("");
     try {
-      const res = await API.post("/register", { username, password });
+      const res = await API.post("/register", { username, email, password });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("username", res.data.username);
-      navigate("/transactions");
+      window.location.href = "/transactions";
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed");
     }
@@ -67,6 +72,21 @@ function Register() {
           placeholder="Choose a username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          style={{
+            width: "100%", padding: "12px 14px", marginBottom: "16px",
+            border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "1rem",
+            background: "#f7fafc", boxSizing: "border-box",
+          }}
+        />
+
+        <label style={{ display: "block", fontWeight: "600", marginBottom: "6px", color: "#4a5568" }}>
+          Email
+        </label>
+        <input
+          type="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           style={{
             width: "100%", padding: "12px 14px", marginBottom: "16px",
             border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "1rem",
