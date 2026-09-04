@@ -20,7 +20,11 @@ const transporter = nodemailer.createTransport({
 });
 
 // MIDDLEWARE
-app.use(cors({ origin: process.env.CLIENT_URL || "*" }));
+app.use(cors({// on .env there is no thing so you can use to test on local host and on render nodeenv= production so it allows clienturl making no cors error 
+  origin: process.env.NODE_ENV === "production" 
+    ? process.env.CLIENT_URL 
+    : "*"
+}));
 app.use(express.json());
 app.set('etag', false);
 
@@ -63,6 +67,7 @@ const monthlySnapshotSchema = new mongoose.Schema({
   totalExpense: Number,
   balance: Number
 });
+
 
 // ─── MODELS ─────────────────────────────────────────────────
 const User = mongoose.model("User", userSchema);

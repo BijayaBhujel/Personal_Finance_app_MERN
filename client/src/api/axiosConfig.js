@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const API = axios.create({
-  //baseURL: "http://localhost:5000"  // Local check ups
-   baseURL: "https://personal-finance-app-mern.onrender.com" // <--deploying live
+ // baseURL: "http://localhost:5000"  // Local check ups
+  baseURL: "https://personal-finance-app-mern.onrender.com" // <--deploying live
 });
 
 // Attach the JWT token to every request, if we have one

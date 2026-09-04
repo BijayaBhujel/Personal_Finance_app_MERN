@@ -4,9 +4,9 @@ import API from "./api/axiosConfig";
 import ChartPage from "./ChartPage";
 import TransactionsPage from "./TransactionsPage";
 import Login from "./Login";
+import Register from "./Register";
 import ForgotPassword from "./ForgotPassword";
 import ResetPassword from "./ResetPassword";
-import Register from "./Register";
 import ProtectedRoute from "./ProtectedRoute";
 import "./App.css";
 
@@ -17,32 +17,45 @@ function App() {
   const [category, setCategory] = useState("Food");
   const [transactions, setTransactions] = useState([]);
   const [balance, setBalance] = useState(0);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [totalExpense, setTotalExpense] = useState(0);
+  const [totalSaving, setTotalSaving] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
 
   const username = localStorage.getItem("username");
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-  if (localStorage.getItem("token")) {
     fetchTransactions();
-   }
   }, []);
+
   const fetchTransactions = async () => {
+    setLoading(true);
     try {
       const res = await API.get("/transactions");
-      setTransactions(res.data);
-      calculateBalance(res.data);
+      const sorted = res.data.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setTransactions(sorted);
+      calculateTotals(sorted);
     } catch (error) {
       console.error("Error fetching transactions", error);
     }
+    setLoading(false);
   };
 
-  const calculateBalance = (data) => {
-    let total = 0;
+  const calculateTotals = (data) => {
+    let income = 0;
+    let expense = 0;
+    let saving = 0;
     data.forEach((t) => {
-      if (t.type === "income") total += Number(t.amount);
-      else total -= Number(t.amount);
+      if (t.type === "income") income += Number(t.amount);
+      else if (t.type === "expense") expense += Number(t.amount);
+      else if (t.type === "saving") saving += Number(t.amount);
     });
-    setBalance(total);
+    setTotalIncome(income);
+    setTotalExpense(expense);
+    setTotalSaving(saving);
+    setBalance(income - expense - saving);
   };
 
   const addTransaction = async () => {
@@ -50,6 +63,7 @@ function App() {
       alert("Please enter a valid amount");
       return;
     }
+    setAdding(true);
     try {
       await API.post("/add-transaction", {
         amount: Number(amount),
@@ -64,6 +78,7 @@ function App() {
     } catch (error) {
       console.error("Error adding transaction", error);
     }
+    setAdding(false);
   };
 
   const deleteTransaction = async (id) => {
@@ -80,17 +95,17 @@ function App() {
       "Are you sure you want to clear all transactions? Current month will be saved automatically."
     );
     if (confirmRestart) {
+      setLoading(true);
       try {
         const res = await API.get("/transactions");
         const currentTransactions = res.data;
 
-        let totalIncome = 0;
-        let totalExpense = 0;
+        let inc = 0, exp = 0, sav = 0;
         currentTransactions.forEach((t) => {
-          if (t.type === "income") totalIncome += Number(t.amount);
-          else totalExpense += Number(t.amount);
+          if (t.type === "income") inc += Number(t.amount);
+          else if (t.type === "expense") exp += Number(t.amount);
+          else if (t.type === "saving") sav += Number(t.amount);
         });
-        const currentBalance = totalIncome - totalExpense;
 
         const monthName = new Date().toLocaleString("default", {
           month: "long",
@@ -100,9 +115,10 @@ function App() {
         await API.post("/save-month", {
           monthName,
           transactions: currentTransactions,
-          totalIncome,
-          totalExpense,
-          balance: currentBalance,
+          totalIncome: inc,
+          totalExpense: exp,
+          totalSaving: sav,
+          balance: inc - exp - sav,
         });
 
         await API.delete("/restart-transactions");
@@ -112,14 +128,37 @@ function App() {
         console.error("Error restarting transactions", error);
         alert("Error saving month. Please try again.");
       }
+      setLoading(false);
     }
   };
 
   const handleLogout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("username");
-  window.location.href = "/login";
-};
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    window.location.href = "/login";
+  };
+
+  const Spinner = () => (
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "40px 0",
+      gap: "12px"
+    }}>
+      <div style={{
+        width: "40px",
+        height: "40px",
+        border: "4px solid #e2e8f0",
+        borderTop: "4px solid #3182ce",
+        borderRadius: "50%",
+        animation: "spin 0.8s linear infinite",
+      }} />
+      <p style={{ color: "#718096", fontSize: "0.9rem" }}>Loading...</p>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
   const Navbar = () => (
     <nav className="navbar">
@@ -134,13 +173,14 @@ function App() {
     <Router>
       <div className="container">
         <Routes>
-        
+          {/* Public routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/register" element={<Register />} />
           <Route path="/" element={<Navigate to="/login" />} />
 
+          {/* Transactions Page - Protected */}
           <Route
             path="/transactions"
             element={
@@ -185,6 +225,15 @@ function App() {
                         />
                         Expense
                       </label>
+                      <label>
+                        <input
+                          type="radio"
+                          value="saving"
+                          checked={type === "saving"}
+                          onChange={(e) => setType(e.target.value)}
+                        />
+                        Saving
+                      </label>
                     </div>
 
                     {type === "expense" && (
@@ -204,27 +253,66 @@ function App() {
                       </div>
                     )}
 
-                    <button onClick={addTransaction}>Add</button>
+                    <button onClick={addTransaction} disabled={adding}>
+                      {adding ? "Adding..." : "Add"}
+                    </button>
 
-                    <h3>
-                      Current Balance:
-                      <span style={{ color: balance >= 0 ? "black" : "red" }}>
-                        {" "}Rs. {balance}
-                      </span>
-                    </h3>
+                    {/* SUMMARY */}
+                    <div style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                      margin: "16px 0",
+                      padding: "16px",
+                      background: "#f7fafc",
+                      borderRadius: "10px",
+                      border: "1px solid #e2e8f0"
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "#4a5568", fontWeight: "500" }}>Total Income</span>
+                        <span style={{ color: "#38a169", fontWeight: "700" }}>+{totalIncome}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "#4a5568", fontWeight: "500" }}>Total Expense</span>
+                        <span style={{ color: "#e53e3e", fontWeight: "700" }}>-{totalExpense}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "#4a5568", fontWeight: "500" }}>Total Saving</span>
+                        <span style={{ color: "#3182ce", fontWeight: "700" }}>{totalSaving}</span>
+                      </div>
+                      <hr style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "4px 0" }} />
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "#1a202c", fontWeight: "700", fontSize: "1.1rem" }}>Balance</span>
+                        <span style={{
+                          color: balance >= 0 ? "#2b6cb0" : "#e53e3e",
+                          fontWeight: "700",
+                          fontSize: "1.1rem"
+                        }}>
+                          {balance}
+                        </span>
+                      </div>
+                    </div>
 
                     <h4>Transactions:</h4>
 
-                    {transactions.length === 0 ? (
+                    {loading ? (
+                      <Spinner />
+                    ) : transactions.length === 0 ? (
                       <p>No Transactions Yet</p>
                     ) : (
                       <ul>
                         {transactions.map((t) => (
-                          <li key={t._id}>
+                          <li key={t._id} style={{
+                            borderLeft: `5px solid ${
+                              t.type === "income" ? "#38a169" :
+                              t.type === "saving" ? "#3182ce" : "#e53e3e"
+                            }`
+                          }}>
                             <strong>
-                              {t.type === "income" ? "INCOME" : "EXPENSE"} :
-                              {t.type === "income" ? "+" : "-"}
-                              Rs. {t.amount}
+                              {t.type === "income" ? "INCOME" :
+                               t.type === "saving" ? "SAVING" : "EXPENSE"} :
+                              {t.type === "income" ? "+" : t.type === "saving" ? "" : "-"}
+                              {t.amount}
                             </strong>
                             <div>{t.description}</div>
                             <small>{new Date(t.date).toLocaleString()}</small>
@@ -241,6 +329,7 @@ function App() {
             }
           />
 
+          {/* Chart Page - Protected */}
           <Route
             path="/chart"
             element={
