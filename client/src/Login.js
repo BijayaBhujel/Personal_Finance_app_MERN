@@ -20,8 +20,9 @@ function Login() {
       const res = await API.post("/login", { username, password });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("username", res.data.username);
-      window.location.href = "/transactions";    
-      } catch (err) {
+      localStorage.setItem("totalSavings", res.data.totalSavings || 0);
+      window.location.href = "/transactions";
+    } catch (err) {
       setError(err.response?.data?.error || "Login failed");
     }
     setLoading(false);
@@ -34,6 +35,7 @@ function Login() {
       alignItems: "center",
       justifyContent: "center",
       background: "linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%)",
+      padding: "20px",
     }}>
       <div style={{
         background: "white",
@@ -61,7 +63,7 @@ function Login() {
           onKeyDown={(e) => e.key === "Enter" && handleLogin()}
           style={{
             width: "100%", padding: "12px 14px", marginBottom: "16px",
-            border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "1rem",
+            border: "1.5px solid #e2e8f0", borderRadius: "10px", fontSize: "1rem",
             background: "#f7fafc", boxSizing: "border-box",
           }}
         />
@@ -77,7 +79,7 @@ function Login() {
           onKeyDown={(e) => e.key === "Enter" && handleLogin()}
           style={{
             width: "100%", padding: "12px 14px", marginBottom: "8px",
-            border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "1rem",
+            border: "1.5px solid #e2e8f0", borderRadius: "10px", fontSize: "1rem",
             background: "#f7fafc", boxSizing: "border-box",
           }}
         />
@@ -87,10 +89,11 @@ function Login() {
             {error}
           </p>
         )}
+
         <div style={{ textAlign: "right", marginBottom: "16px" }}>
-            <Link to="/forgot-password" style={{ fontSize: "0.9rem", color: "#3182ce" }}>
-                 Forgot password?
-            </Link>
+          <Link to="/forgot-password" style={{ fontSize: "0.9rem", color: "#3182ce" }}>
+            Forgot password?
+          </Link>
         </div>
 
         <button
@@ -98,7 +101,7 @@ function Login() {
           disabled={loading}
           style={{
             width: "100%", padding: "14px", background: loading ? "#90cdf4" : "#3182ce",
-            color: "white", border: "none", borderRadius: "8px",
+            color: "white", border: "none", borderRadius: "10px",
             fontSize: "1.05rem", fontWeight: "600", cursor: "pointer", marginTop: "8px",
           }}
         >

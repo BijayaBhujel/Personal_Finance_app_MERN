@@ -21,7 +21,9 @@ function App() {
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpense, setTotalExpense] = useState(0);
   const [totalSaving, setTotalSaving] = useState(0);
-  const [totalSavings, setTotalSavings] = useState(0); // persistent savings
+  const [totalSavings, setTotalSavings] = useState(
+    Number(localStorage.getItem("totalSavings")) || 0
+  );
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
 
@@ -37,6 +39,7 @@ function App() {
     try {
       const res = await API.get("/savings-balance");
       setTotalSavings(res.data.totalSavings);
+      localStorage.setItem("totalSavings", res.data.totalSavings);
     } catch (error) {
       console.error("Error fetching savings balance", error);
     }
@@ -59,8 +62,7 @@ function App() {
     let income = 0, expense = 0, saving = 0;
     data.forEach((t) => {
       if (t.type === "income") income += Number(t.amount);
-      else if (t.type === "expense" && !t.paidFromSavings) expense += Number(t.amount);
-      else if (t.type === "expense" && t.paidFromSavings) expense += Number(t.amount);
+      else if (t.type === "expense") expense += Number(t.amount);
       else if (t.type === "saving") saving += Number(t.amount);
     });
     setTotalIncome(income);
@@ -89,6 +91,7 @@ function App() {
       setPaidFromSavings(false);
       if (res.data.totalSavings !== undefined) {
         setTotalSavings(res.data.totalSavings);
+        localStorage.setItem("totalSavings", res.data.totalSavings);
       }
       fetchTransactions();
     } catch (error) {
@@ -102,6 +105,7 @@ function App() {
       const res = await API.delete(`/delete-transaction/${id}`);
       if (res.data.totalSavings !== undefined) {
         setTotalSavings(res.data.totalSavings);
+        localStorage.setItem("totalSavings", res.data.totalSavings);
       }
       fetchTransactions();
     } catch (error) {
@@ -147,6 +151,7 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
+    localStorage.removeItem("totalSavings");
     window.location.href = "/login";
   };
 
@@ -209,15 +214,30 @@ function App() {
 
                     <div className="radio-group">
                       <label>
-                        <input type="radio" value="income" checked={type === "income"} onChange={(e) => { setType(e.target.value); setPaidFromSavings(false); }} />
+                        <input
+                          type="radio"
+                          value="income"
+                          checked={type === "income"}
+                          onChange={(e) => { setType(e.target.value); setPaidFromSavings(false); }}
+                        />
                         Income
                       </label>
                       <label>
-                        <input type="radio" value="expense" checked={type === "expense"} onChange={(e) => setType(e.target.value)} />
+                        <input
+                          type="radio"
+                          value="expense"
+                          checked={type === "expense"}
+                          onChange={(e) => setType(e.target.value)}
+                        />
                         Expense
                       </label>
                       <label>
-                        <input type="radio" value="saving" checked={type === "saving"} onChange={(e) => { setType(e.target.value); setPaidFromSavings(false); }} />
+                        <input
+                          type="radio"
+                          value="saving"
+                          checked={type === "saving"}
+                          onChange={(e) => { setType(e.target.value); setPaidFromSavings(false); }}
+                        />
                         Saving
                       </label>
                     </div>
@@ -237,7 +257,7 @@ function App() {
                           </select>
                         </div>
 
-                        {/* PAY FROM SAVINGS OPTION */}
+                        {/* PAY FROM SAVINGS */}
                         <div className="pay-source-group">
                           <label className="pay-source-label">Pay from:</label>
                           <div className="radio-group">
@@ -300,10 +320,13 @@ function App() {
                         {transactions.map((t) => (
                           <li key={t._id} className={`transaction-item ${t.type}`}>
                             <strong>
-                              {t.type === "income" ? "INCOME" : t.type === "saving" ? "SAVING" : "EXPENSE"} :
+                              {t.type === "income" ? "INCOME" :
+                               t.type === "saving" ? "SAVING" : "EXPENSE"} :
                               {t.type === "income" ? "+" : t.type === "saving" ? "" : "-"}
                               {t.amount}
-                              {t.paidFromSavings && <span className="savings-tag"> (from savings)</span>}
+                              {t.paidFromSavings && (
+                                <span className="savings-tag"> (from savings)</span>
+                              )}
                             </strong>
                             <div>{t.description}</div>
                             <small>{new Date(t.date).toLocaleString()}</small>

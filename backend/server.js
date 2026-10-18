@@ -43,18 +43,18 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   resetToken: String,
   resetTokenExpiry: Date,
-  totalSavings: { type: Number, default: 0 }, // persistent savings
+  totalSavings: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now }
 });
 
 const financeSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  type: String,         // "income", "expense", "saving"
+  type: String,
   amount: Number,
   description: String,
   date: { type: Date, default: Date.now },
   category: String,
-  paidFromSavings: { type: Boolean, default: false } // new field
+  paidFromSavings: { type: Boolean, default: false }
 });
 
 const monthlySnapshotSchema = new mongoose.Schema({
@@ -100,7 +100,7 @@ app.post("/register", async (req, res) => {
     const user = new User({ username, email, password: hashedPassword });
     await user.save();
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    res.json({ token, username: user.username });
+    res.json({ token, username: user.username, totalSavings: user.totalSavings });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Error registering user" });
@@ -121,9 +121,8 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ─── SAVINGS ROUTES ──────────────────────────────────────────
+// ─── SAVINGS ROUTE ────────────────────────────────────────────
 
-// GET user's persistent savings balance
 app.get("/savings-balance", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
@@ -147,7 +146,6 @@ app.post("/add-transaction", authMiddleware, async (req, res) => {
   try {
     const { type, amount, description, category, date, paidFromSavings } = req.body;
 
-    // If expense paid from savings — deduct from user's savings balance
     if (type === "expense" && paidFromSavings) {
       const user = await User.findById(req.userId);
       if (user.totalSavings < amount) {
@@ -157,7 +155,6 @@ app.post("/add-transaction", authMiddleware, async (req, res) => {
       await user.save();
     }
 
-    // If saving type — add to user's persistent savings balance
     if (type === "saving") {
       await User.findByIdAndUpdate(req.userId, {
         $inc: { totalSavings: Number(amount) }
@@ -175,8 +172,7 @@ app.post("/add-transaction", authMiddleware, async (req, res) => {
     });
 
     await transaction.save();
-    
-    // Return updated savings balance
+
     const user = await User.findById(req.userId);
     res.json({ message: "Transaction saved", totalSavings: user.totalSavings });
   } catch (error) {
@@ -190,7 +186,6 @@ app.delete("/delete-transaction/:id", authMiddleware, async (req, res) => {
     const transaction = await Finance.findOne({ _id: req.params.id, userId: req.userId });
     if (!transaction) return res.status(404).json({ error: "Transaction not found" });
 
-    // Reverse the savings effect when deleting
     if (transaction.type === "saving") {
       await User.findByIdAndUpdate(req.userId, {
         $inc: { totalSavings: -Number(transaction.amount) }
@@ -203,7 +198,7 @@ app.delete("/delete-transaction/:id", authMiddleware, async (req, res) => {
     }
 
     await Finance.findOneAndDelete({ _id: req.params.id, userId: req.userId });
-    
+
     const user = await User.findById(req.userId);
     res.json({ message: "Transaction deleted", totalSavings: user.totalSavings });
   } catch (error) {
@@ -211,7 +206,6 @@ app.delete("/delete-transaction/:id", authMiddleware, async (req, res) => {
   }
 });
 
-// Restart — only clears monthly transactions, savings persist
 app.delete("/restart-transactions", authMiddleware, async (req, res) => {
   try {
     await Finance.deleteMany({ userId: req.userId });
