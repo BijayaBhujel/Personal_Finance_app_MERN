@@ -15,11 +15,13 @@ function App() {
   const [description, setDescription] = useState("");
   const [type, setType] = useState("income");
   const [category, setCategory] = useState("Food");
+  const [paidFromSavings, setPaidFromSavings] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [balance, setBalance] = useState(0);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpense, setTotalExpense] = useState(0);
   const [totalSaving, setTotalSaving] = useState(0);
+  const [totalSavings, setTotalSavings] = useState(0); // persistent savings
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
 
@@ -28,7 +30,17 @@ function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchTransactions();
+    fetchSavingsBalance();
   }, []);
+
+  const fetchSavingsBalance = async () => {
+    try {
+      const res = await API.get("/savings-balance");
+      setTotalSavings(res.data.totalSavings);
+    } catch (error) {
+      console.error("Error fetching savings balance", error);
+    }
+  };
 
   const fetchTransactions = async () => {
     setLoading(true);
@@ -44,12 +56,11 @@ function App() {
   };
 
   const calculateTotals = (data) => {
-    let income = 0;
-    let expense = 0;
-    let saving = 0;
+    let income = 0, expense = 0, saving = 0;
     data.forEach((t) => {
       if (t.type === "income") income += Number(t.amount);
-      else if (t.type === "expense") expense += Number(t.amount);
+      else if (t.type === "expense" && !t.paidFromSavings) expense += Number(t.amount);
+      else if (t.type === "expense" && t.paidFromSavings) expense += Number(t.amount);
       else if (t.type === "saving") saving += Number(t.amount);
     });
     setTotalIncome(income);
@@ -65,25 +76,33 @@ function App() {
     }
     setAdding(true);
     try {
-      await API.post("/add-transaction", {
+      const res = await API.post("/add-transaction", {
         amount: Number(amount),
         description,
         type,
         category: type === "expense" ? category : "",
         date: new Date(),
+        paidFromSavings: type === "expense" ? paidFromSavings : false,
       });
       setAmount("");
       setDescription("");
+      setPaidFromSavings(false);
+      if (res.data.totalSavings !== undefined) {
+        setTotalSavings(res.data.totalSavings);
+      }
       fetchTransactions();
     } catch (error) {
-      console.error("Error adding transaction", error);
+      alert(error.response?.data?.error || "Error adding transaction");
     }
     setAdding(false);
   };
 
   const deleteTransaction = async (id) => {
     try {
-      await API.delete(`/delete-transaction/${id}`);
+      const res = await API.delete(`/delete-transaction/${id}`);
+      if (res.data.totalSavings !== undefined) {
+        setTotalSavings(res.data.totalSavings);
+      }
       fetchTransactions();
     } catch (error) {
       console.error("Error deleting transaction", error);
@@ -92,26 +111,20 @@ function App() {
 
   const restartTransactions = async () => {
     const confirmRestart = window.confirm(
-      "Are you sure you want to clear all transactions? Current month will be saved automatically."
+      "Are you sure? Monthly transactions will be saved and cleared. Your savings balance will carry over!"
     );
     if (confirmRestart) {
       setLoading(true);
       try {
         const res = await API.get("/transactions");
         const currentTransactions = res.data;
-
         let inc = 0, exp = 0, sav = 0;
         currentTransactions.forEach((t) => {
           if (t.type === "income") inc += Number(t.amount);
           else if (t.type === "expense") exp += Number(t.amount);
           else if (t.type === "saving") sav += Number(t.amount);
         });
-
-        const monthName = new Date().toLocaleString("default", {
-          month: "long",
-          year: "numeric",
-        });
-
+        const monthName = new Date().toLocaleString("default", { month: "long", year: "numeric" });
         await API.post("/save-month", {
           monthName,
           transactions: currentTransactions,
@@ -120,10 +133,9 @@ function App() {
           totalSaving: sav,
           balance: inc - exp - sav,
         });
-
         await API.delete("/restart-transactions");
         fetchTransactions();
-        alert(`${monthName} saved! Ready for a new month.`);
+        alert(`${monthName} saved! Savings balance carried over ✅`);
       } catch (error) {
         console.error("Error restarting transactions", error);
         alert("Error saving month. Please try again.");
@@ -139,24 +151,9 @@ function App() {
   };
 
   const Spinner = () => (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "40px 0",
-      gap: "12px"
-    }}>
-      <div style={{
-        width: "40px",
-        height: "40px",
-        border: "4px solid #e2e8f0",
-        borderTop: "4px solid #3182ce",
-        borderRadius: "50%",
-        animation: "spin 0.8s linear infinite",
-      }} />
-      <p style={{ color: "#718096", fontSize: "0.9rem" }}>Loading...</p>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    <div className="spinner-container">
+      <div className="spinner" />
+      <p className="spinner-text">Loading...</p>
     </div>
   );
 
@@ -164,8 +161,8 @@ function App() {
     <nav className="navbar">
       <Link to="/transactions">Transactions</Link>
       <Link to="/chart">Chart</Link>
-      <button onClick={restartTransactions}>Restart Month</button>
-      <button onClick={handleLogout}>Logout</button>
+      <button className="navbar-btn" onClick={restartTransactions}>Restart Month</button>
+      <button className="navbar-btn logout-btn" onClick={handleLogout}>Logout</button>
     </nav>
   );
 
@@ -173,14 +170,12 @@ function App() {
     <Router>
       <div className="container">
         <Routes>
-          {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/" element={<Navigate to="/login" />} />
 
-          {/* Transactions Page - Protected */}
           <Route
             path="/transactions"
             element={
@@ -189,6 +184,12 @@ function App() {
                   <Navbar />
                   <TransactionsPage>
                     <h2>Welcome, {username}!</h2>
+
+                    {/* PERSISTENT SAVINGS BANNER */}
+                    <div className="savings-banner">
+                      <span>💰 Total Savings</span>
+                      <span className="savings-amount">{totalSavings}</span>
+                    </div>
 
                     <label>Amount:</label>
                     <input
@@ -208,50 +209,57 @@ function App() {
 
                     <div className="radio-group">
                       <label>
-                        <input
-                          type="radio"
-                          value="income"
-                          checked={type === "income"}
-                          onChange={(e) => setType(e.target.value)}
-                        />
+                        <input type="radio" value="income" checked={type === "income"} onChange={(e) => { setType(e.target.value); setPaidFromSavings(false); }} />
                         Income
                       </label>
                       <label>
-                        <input
-                          type="radio"
-                          value="expense"
-                          checked={type === "expense"}
-                          onChange={(e) => setType(e.target.value)}
-                        />
+                        <input type="radio" value="expense" checked={type === "expense"} onChange={(e) => setType(e.target.value)} />
                         Expense
                       </label>
                       <label>
-                        <input
-                          type="radio"
-                          value="saving"
-                          checked={type === "saving"}
-                          onChange={(e) => setType(e.target.value)}
-                        />
+                        <input type="radio" value="saving" checked={type === "saving"} onChange={(e) => { setType(e.target.value); setPaidFromSavings(false); }} />
                         Saving
                       </label>
                     </div>
 
                     {type === "expense" && (
-                      <div className="category-group">
-                        <label>Category:</label>
-                        <select
-                          value={category}
-                          onChange={(e) => setCategory(e.target.value)}
-                        >
-                          <option>Food</option>
-                          <option>Rent</option>
-                          <option>Travel</option>
-                          <option>Entertainment</option>
-                          <option>Shopping</option>
-                          <option>Fuel</option>
-                          <option>Other</option>
-                        </select>
-                      </div>
+                      <>
+                        <div className="category-group">
+                          <label>Category:</label>
+                          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                            <option>Food</option>
+                            <option>Rent</option>
+                            <option>Travel</option>
+                            <option>Fuel</option>
+                            <option>Entertainment</option>
+                            <option>Shopping</option>
+                            <option>Other</option>
+                          </select>
+                        </div>
+
+                        {/* PAY FROM SAVINGS OPTION */}
+                        <div className="pay-source-group">
+                          <label className="pay-source-label">Pay from:</label>
+                          <div className="radio-group">
+                            <label>
+                              <input
+                                type="radio"
+                                checked={!paidFromSavings}
+                                onChange={() => setPaidFromSavings(false)}
+                              />
+                              Regular Balance
+                            </label>
+                            <label>
+                              <input
+                                type="radio"
+                                checked={paidFromSavings}
+                                onChange={() => setPaidFromSavings(true)}
+                              />
+                              Savings ({totalSavings})
+                            </label>
+                          </div>
+                        </div>
+                      </>
                     )}
 
                     <button onClick={addTransaction} disabled={adding}>
@@ -259,36 +267,23 @@ function App() {
                     </button>
 
                     {/* SUMMARY */}
-                    <div style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                      margin: "16px 0",
-                      padding: "16px",
-                      background: "#f7fafc",
-                      borderRadius: "10px",
-                      border: "1px solid #e2e8f0"
-                    }}>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "#4a5568", fontWeight: "500" }}>Total Income</span>
-                        <span style={{ color: "#38a169", fontWeight: "700" }}>+{totalIncome}</span>
+                    <div className="summary-box">
+                      <div className="summary-row">
+                        <span>Total Income</span>
+                        <span className="income-text">+{totalIncome}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "#4a5568", fontWeight: "500" }}>Total Expense</span>
-                        <span style={{ color: "#e53e3e", fontWeight: "700" }}>-{totalExpense}</span>
+                      <div className="summary-row">
+                        <span>Total Expense</span>
+                        <span className="expense-text">-{totalExpense}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "#4a5568", fontWeight: "500" }}>Total Saving</span>
-                        <span style={{ color: "#3182ce", fontWeight: "700" }}>{totalSaving}</span>
+                      <div className="summary-row">
+                        <span>Total Saving (this month)</span>
+                        <span className="saving-text">{totalSaving}</span>
                       </div>
-                      <hr style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "4px 0" }} />
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "#1a202c", fontWeight: "700", fontSize: "1.1rem" }}>Balance</span>
-                        <span style={{
-                          color: balance >= 0 ? "#2b6cb0" : "#e53e3e",
-                          fontWeight: "700",
-                          fontSize: "1.1rem"
-                        }}>
+                      <hr className="summary-divider" />
+                      <div className="summary-row">
+                        <span className="balance-label">Balance</span>
+                        <span className={balance >= 0 ? "balance-positive" : "balance-negative"}>
                           {balance}
                         </span>
                       </div>
@@ -303,21 +298,16 @@ function App() {
                     ) : (
                       <ul>
                         {transactions.map((t) => (
-                          <li key={t._id} style={{
-                            borderLeft: `5px solid ${
-                              t.type === "income" ? "#38a169" :
-                              t.type === "saving" ? "#3182ce" : "#e53e3e"
-                            }`
-                          }}>
+                          <li key={t._id} className={`transaction-item ${t.type}`}>
                             <strong>
-                              {t.type === "income" ? "INCOME" :
-                               t.type === "saving" ? "SAVING" : "EXPENSE"} :
+                              {t.type === "income" ? "INCOME" : t.type === "saving" ? "SAVING" : "EXPENSE"} :
                               {t.type === "income" ? "+" : t.type === "saving" ? "" : "-"}
                               {t.amount}
+                              {t.paidFromSavings && <span className="savings-tag"> (from savings)</span>}
                             </strong>
                             <div>{t.description}</div>
                             <small>{new Date(t.date).toLocaleString()}</small>
-                            <button onClick={() => deleteTransaction(t._id)}>
+                            <button className="delete-btn" onClick={() => deleteTransaction(t._id)}>
                               Delete
                             </button>
                           </li>
@@ -330,7 +320,6 @@ function App() {
             }
           />
 
-          {/* Chart Page - Protected */}
           <Route
             path="/chart"
             element={

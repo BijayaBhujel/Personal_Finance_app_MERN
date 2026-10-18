@@ -1,8 +1,13 @@
-/* Reset & Base */
+/* ─── RESET & BASE ─────────────────────────────────────────── */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
 }
 
 body {
@@ -13,80 +18,143 @@ body {
   line-height: 1.6;
 }
 
-/* Container */
+/* ─── CONTAINER ─────────────────────────────────────────────── */
 .container {
-  max-width: 480px;
-  margin: 40px auto;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
   background: white;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
+  min-height: 100vh;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
 }
 
-/* Navbar */
+@media (min-width: 520px) {
+  .container {
+    margin: 20px auto;
+    min-height: auto;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+}
+
+/* ─── NAVBAR ─────────────────────────────────────────────────── */
 .navbar {
   background: #2d3748;
-  padding: 16px;
+  padding: 12px 16px;
   display: flex;
-  justify-content: center;
-  gap: 32px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .navbar a {
   color: white;
   text-decoration: none;
   font-weight: 500;
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 8px;
-  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  transition: background 0.2s;
 }
 
-.navbar a:hover,
-.navbar a.active {
+.navbar a:hover {
   background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
 }
 
-/* Main content padding */
-.container > div {
-  padding: 24px;
+.navbar-btn {
+  width: auto !important;
+  padding: 6px 12px !important;
+  margin: 0 !important;
+  font-size: 0.85rem !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-radius: 8px !important;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
 }
 
-/* Headings */
-h2, h3, h4 {
-  color: #1a202c;
-  margin-bottom: 1rem;
+.navbar-btn:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
+.logout-btn {
+  background: rgba(229, 62, 62, 0.4) !important;
+}
+
+.logout-btn:hover {
+  background: rgba(229, 62, 62, 0.6) !important;
+}
+
+/* ─── MAIN CONTENT ───────────────────────────────────────────── */
+.container > div > div {
+  padding: 16px;
+}
+
+/* ─── HEADINGS ───────────────────────────────────────────────── */
 h2 {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: 600;
+  color: #1a202c;
   text-align: center;
+  margin-bottom: 16px;
 }
 
-h3 {
-  font-size: 1.25rem;
+h3 { font-size: 1.15rem; margin-bottom: 8px; }
+h4 { font-size: 1rem; margin-bottom: 8px; color: #4a5568; }
+
+/* ─── SAVINGS BANNER ─────────────────────────────────────────── */
+.savings-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #ebf8ff, #bee3f8);
+  border: 1px solid #90cdf4;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: #2b6cb0;
+  font-size: 1rem;
 }
 
-/* Form elements */
+.savings-amount {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #2b6cb0;
+}
+
+/* ─── FORM ELEMENTS ──────────────────────────────────────────── */
 label {
   display: block;
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
   color: #4a5568;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
-input,
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
 select {
   width: 100%;
   padding: 12px 14px;
-  margin-bottom: 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  margin-bottom: 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
   font-size: 1rem;
-  transition: all 0.2s ease;
   background: #f7fafc;
+  color: #2d3748;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 input:focus,
@@ -97,133 +165,205 @@ select:focus {
   background: white;
 }
 
-/* Radio group */
+/* ─── RADIO GROUP ────────────────────────────────────────────── */
 .radio-group {
   display: flex;
   justify-content: center;
-  gap: 32px;
-  margin: 20px 0;
+  gap: 16px;
+  margin: 12px 0;
+  flex-wrap: wrap;
 }
 
 .radio-group label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-weight: 500;
   cursor: pointer;
+  font-size: 0.95rem;
+  margin-bottom: 0;
 }
 
 .radio-group input[type="radio"] {
   width: auto;
   margin: 0;
+  padding: 0;
   accent-color: #4299e1;
+  cursor: pointer;
 }
 
-/* Category select group */
+/* ─── PAY SOURCE GROUP ───────────────────────────────────────── */
+.pay-source-group {
+  background: #f0fff4;
+  border: 1.5px solid #c6f6d5;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.pay-source-label {
+  color: #276749;
+  margin-bottom: 8px;
+}
+
+/* ─── CATEGORY GROUP ─────────────────────────────────────────── */
 .category-group {
-  margin: 12px 0 24px;
+  margin-bottom: 4px;
 }
 
-/* Buttons */
+/* ─── BUTTONS ────────────────────────────────────────────────── */
 button {
   width: 100%;
-  padding: 14px;
+  padding: 13px;
   background: #3182ce;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1.05rem;
+  border-radius: 10px;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.25s ease;
-  margin: 12px 0;
+  transition: background 0.2s, transform 0.1s;
+  margin: 8px 0;
+  touch-action: manipulation;
 }
 
 button:hover {
   background: #2b6cb0;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(49, 130, 206, 0.25);
 }
 
 button:active {
-  transform: translateY(0);
+  transform: scale(0.98);
 }
 
-/* Delete button */
-.delete-btn {
-  width: auto;
-  padding: 8px 16px;
-  background: #e53e3e;
-  font-size: 0.9rem;
-  margin: 10px 0 0 auto;
-  display: block;
+button:disabled {
+  background: #90cdf4;
+  cursor: not-allowed;
 }
 
-.delete-btn:hover {
-  background: #c53030;
+/* ─── SUMMARY BOX ────────────────────────────────────────────── */
+.summary-box {
+  background: #f7fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-/* Transaction list */
-ul {
-  list-style: none;
-  margin-top: 24px;
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
 }
 
-li {
-  padding: 16px;
-  margin-bottom: 12px;
+.summary-row span:first-child {
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.income-text { color: #38a169; font-weight: 700; }
+.expense-text { color: #e53e3e; font-weight: 700; }
+.saving-text { color: #3182ce; font-weight: 700; }
+.summary-divider { border: none; border-top: 1.5px solid #e2e8f0; }
+.balance-label { color: #1a202c; font-weight: 700; font-size: 1rem; }
+.balance-positive { color: #2b6cb0; font-weight: 700; font-size: 1.1rem; }
+.balance-negative { color: #e53e3e; font-weight: 700; font-size: 1.1rem; }
+
+/* ─── TRANSACTION LIST ───────────────────────────────────────── */
+ul { list-style: none; margin-top: 8px; }
+
+.transaction-item {
+  padding: 12px 14px;
+  margin-bottom: 10px;
   border-radius: 10px;
   background: #f7fafc;
   border: 1px solid #edf2f7;
-  transition: all 0.2s ease;
+  transition: box-shadow 0.2s;
 }
 
-li:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-}
-
-.income {
+.transaction-item.income {
   border-left: 5px solid #38a169;
   background: #f0fff4;
 }
 
-.expense {
+.transaction-item.expense {
   border-left: 5px solid #e53e3e;
   background: #fff5f5;
 }
 
-li strong {
-  font-size: 1.15rem;
-  display: block;
-  margin-bottom: 6px;
+.transaction-item.saving {
+  border-left: 5px solid #3182ce;
+  background: #ebf8ff;
 }
 
-small {
+.transaction-item strong {
+  font-size: 1rem;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.savings-tag {
+  font-size: 0.8rem;
+  color: #2b6cb0;
+  font-weight: 500;
+  background: #bee3f8;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 4px;
+}
+
+.transaction-item small {
   color: #718096;
-  font-size: 0.85rem;
-  margin-top: 4px;
+  font-size: 0.82rem;
   display: block;
+  margin-top: 3px;
 }
 
-/* Balance display */
-h3 span {
-  font-weight: 700;
-  font-size: 1.4rem;
-}
-.recharts-wrapper {
-  margin: 0 auto !important;
-}
-
-.recharts-pie-label-text {
-  font-size: 12px !important;   /* smaller labels = less clipping */
+.delete-btn {
+  width: auto !important;
+  padding: 6px 12px !important;
+  background: #e53e3e !important;
+  font-size: 0.82rem !important;
+  margin: 8px 0 0 auto !important;
+  display: block !important;
+  border-radius: 6px !important;
 }
 
-/* Prevent overflow clipping */
-.recharts-responsive-container {
-  overflow: visible !important;
+.delete-btn:hover {
+  background: #c53030 !important;
 }
 
-/* Make positive/negative more obvious */
-h3 span.positive { color: #38a169; }
-h3 span.negative { color: #e53e3e; }
+/* ─── SPINNER ────────────────────────────────────────────────── */
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 0;
+  gap: 12px;
+}
+
+.spinner {
+  width: 38px;
+  height: 38px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #3182ce;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.spinner-text {
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── RECHARTS FIX ───────────────────────────────────────────── */
+.recharts-wrapper { margin: 0 auto !important; }
+.recharts-pie-label-text { font-size: 12px !important; }
+.recharts-responsive-container { overflow: visible !important; }

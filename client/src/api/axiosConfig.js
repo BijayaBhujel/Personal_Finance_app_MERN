@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
- // baseURL: "http://localhost:5000"  // Local check ups
+  // baseURL: "http://localhost:5000"  // Local check ups
   baseURL: "https://personal-finance-app-mern.onrender.com" // <--deploying live
 });
 
